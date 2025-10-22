@@ -127,7 +127,82 @@ SERPER_API_KEY=xxx
 JINA_API_KEY=xxx
 ```
 
-### 2. 运行训练
+### 2. 测试 API 连接
+
+**在运行训练之前，强烈建议先测试 API 是否正常工作**，避免训练过程中因 API 问题而卡住。
+
+我们提供了诊断脚本 `debug_api.py` 来测试 API 连接和并发性能：
+
+```bash
+cd training_free_grpo
+
+# 测试 Qwen 模型（推荐）
+python debug_api.py --model qwen
+
+# 测试 DeepSeek 模型
+python debug_api.py --model deepseek
+
+# 测试 Gemini 模型
+python debug_api.py --model gemini
+
+# 测试 OpenAI 模型
+python debug_api.py --model openai
+
+# 使用 .env 文件中的默认配置
+python debug_api.py
+
+# 查看帮助信息
+python debug_api.py --help
+```
+
+**测试内容**：
+1. ✅ **简单 API 调用测试** - 验证 API Key 和网络连接
+2. ✅ **异步调用测试** - 模拟训练脚本的调用方式
+3. ✅ **并发调用测试** - 测试 5 个并发请求，检查速率限制
+
+**成功输出示例**：
+```
+============================================================
+开始诊断API调用问题
+============================================================
+
+1. 设置qwen模型环境...
+✓ Model configured: qwen
+  - Model: qwen3-8b
+  - Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1
+  - API Key: ********84dd
+
+2. 创建LLM实例...
+
+3. 测试简单API调用...
+   测试提示: 计算 2+2=?
+   发送请求...
+[LLM] API call successful, received 9 characters
+
+✅ API调用成功!
+   响应时间: 0.60秒
+   响应内容: 2 + 2 = 4
+
+4. 测试异步调用（模拟训练脚本）...
+✅ 异步调用成功!
+   响应时间: 0.36秒
+
+5. 测试小规模并发调用（5个并发）...
+   并发调用完成: 5/5 成功
+   总耗时: 1.2秒
+
+============================================================
+✅ 所有测试通过! API配置正常
+============================================================
+```
+
+**常见问题排查**：
+- ❌ **连接超时**: 检查网络是否能访问对应的 API 地址
+- ❌ **认证失败**: 验证 API Key 是否正确配置
+- ❌ **速率限制**: 考虑降低训练时的 `--rollout_concurrency` 参数
+- ❌ **模型不存在**: 检查 `.env` 中配置的模型名称是否正确
+
+### 3. 运行训练
 
 进入 `training_free_grpo` 目录运行训练脚本。
 
@@ -153,18 +228,16 @@ cd training_free_grpo
 
 python train.py \
     --mode agent \
-    --model qwen \
-    --domain math \
-    --experiment_name DAPO100 \
-    --dataset DAPO-Math-17k \
-    --dataset_truncate 100 \
-    --epochs 5 \
-    --batchsize 100 \
+    --domain web \
+    --experiment_name AFM_web_RL_100 \
+    --dataset AFM_web_RL_100 \
+    --epochs 3 \
+    --batchsize 4 \
     --grpo_n 5 \
-    --rollout_concurrency 5 \
+    --rollout_concurrency 128 \
     --rollout_temperature 0.7 \
-    --rollout_max_tokens 16384 \
-    --task_timeout 3600
+    --task_timeout 1800
+    --model qwen
 ```
 
 **示例 2：使用 DeepSeek 模型训练**
@@ -202,7 +275,7 @@ python train.py \
     --task_timeout 1800
 ```
 
-### 3. 运行评估
+### 4. 运行评估
 
 使用 `main.py` 脚本进行评估。
 
@@ -284,5 +357,4 @@ data/{domain}/train/{experiment_name}/
 - **论文**: [Training-Free Group Relative Policy Optimization (arXiv:2510.08191)](https://arxiv.org/abs/2510.08191)
 
 
-```
 

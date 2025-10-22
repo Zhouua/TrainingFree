@@ -76,10 +76,13 @@ async def rollout_dataset(
             sample = await task_queue.get()
             task_start_time = time.time()
             try:
+                tqdm.write(f"Worker {name}: Starting task runid={sample['runid']}...")
                 if worker_agent is None:
                     llm = LLM()
+                    tqdm.write(f"Worker {name}: Calling LLM API for runid={sample['runid']}...")
                     coro = asyncio.to_thread(llm.chat, sample["prompt"], temperature=temperature, max_tokens=max_tokens)
-                    res = await asyncio.wait_for(coro, timeout=task_timeout)                    
+                    res = await asyncio.wait_for(coro, timeout=task_timeout)
+                    tqdm.write(f"Worker {name}: LLM API returned for runid={sample['runid']}")                    
                     res = TaskRecorder(
                             final_output=res,
                             trajectories=[{
@@ -90,6 +93,7 @@ async def rollout_dataset(
                             }],
                         )
                 else:
+                    tqdm.write(f"Worker {name}: Running agent for runid={sample['runid']}...")
                     async with worker_agent as agent:
                         async def rollout_streamed(sample) -> TaskRecorder:
                             prompt = sample.get("prompt", sample["problem"])
@@ -101,6 +105,7 @@ async def rollout_dataset(
                                 trajectories=[traj],
                             )
                         res = await asyncio.wait_for(rollout_streamed(sample), timeout=task_timeout)
+                    tqdm.write(f"Worker {name}: Agent completed for runid={sample['runid']}")
                 
                 task_end_time = time.time()
                 sample.update(
@@ -124,9 +129,18 @@ async def rollout_dataset(
                 error_info = traceback.format_exc()
                 print(f"> error: {error_info}")
                 
+                # 判断是否为速率限制错误，如果是则等待一段时间
+                is_rate_limit_error = "RateLimitError" in str(type(e).__name__) or "429" in str(e)
+                
                 if sample["retry_count"] <= max_retries:
-                    tqdm.write(f"Worker {name}: Task runid={sample['runid']} failed with {type(e).__name__}. Retrying ({sample['retry_count']}/{max_retries})...")
-                    await task_queue.put(sample) # Re-queue the task
+                    if is_rate_limit_error:
+                        # 指数退避：2^retry_count * 5 秒
+                        wait_time = (2 ** sample["retry_count"]) * 5
+                        tqdm.write(f"Worker {name}: Task runid={sample['runid']} hit rate limit. Waiting {wait_time}s before retry ({sample['retry_count']}/{max_retries})...")
+                        await asyncio.sleep(wait_time)
+                    else:
+                        tqdm.write(f"Worker {name}: Task runid={sample['runid']} failed with {type(e).__name__}. Retrying ({sample['retry_count']}/{max_retries})...")
+                    await task_queue.put(sample)  # Re-queue the task
                 else:
                     tqdm.write(f"Worker {name}: Task runid={sample['runid']} failed after {max_retries} retries. Error: {e}. Traceback: {error_info}")
                     sample.update(

@@ -1,0 +1,13 @@
+python train.py \
+    --mode agent \
+    --domain math \
+    --experiment_name DAPO100 \
+    --dataset DAPO-Math-17k \
+    --dataset_truncate 100 \
+    --epochs 3 \
+    --batchsize 100 \
+    --grpo_n 5 \
+    --rollout_concurrency 10 \
+    --rollout_temperature 0.7 \
+    --task_timeout 1800 \
+    --model qwen
