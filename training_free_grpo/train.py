@@ -6,6 +6,7 @@ import os
 import random
 
 from training_free_grpo.main import rollout_dataset, load_rollouts
+from training_free_grpo.model_config import setup_model_env, get_supported_models
 from utu.agents import SimpleAgent
 from utu.config import ConfigLoader
 
@@ -13,6 +14,14 @@ random.seed(42)
 
 
 async def main(args):
+    # Set up model configuration
+    if args.model:
+        setup_model_env(args.model)
+    
+    # Get current model name from environment
+    current_model_name = os.getenv("UTU_LLM_MODEL", "unknown")
+    print(f"Using model: {current_model_name}")
+    
     # Set up domain-specific variables
     if args.domain == "math":
         from training_free_grpo.math.dataset import load_data
@@ -29,9 +38,15 @@ async def main(args):
     else:
         raise ValueError(f"Unsupported domain: {args.domain}")
     
-    # Create experiment directory
-    experiment_dir = os.path.join("data", args.domain, "train", args.experiment_name)
-    os.makedirs(experiment_dir, exist_ok=True)
+    # Create experiment directory structure
+    # Shared epoch data: data/{domain}/train/{experiment_name}/epoch_{X}/
+    # Model-specific steps: data/{domain}/train/{experiment_name}/{model_name}/step_{X}/
+    base_experiment_dir = os.path.join("data", args.domain, "train", args.experiment_name)
+    model_experiment_dir = os.path.join(base_experiment_dir, current_model_name)
+    os.makedirs(base_experiment_dir, exist_ok=True)
+    os.makedirs(model_experiment_dir, exist_ok=True)
+    print(f"Base experiment directory: {base_experiment_dir}")
+    print(f"Model experiment directory: {model_experiment_dir}")
 
     # Set up the agent
     if args.mode == "prompt":
@@ -52,8 +67,8 @@ async def main(args):
         train_data = train_data[: args.dataset_truncate]
     assert len(train_data) % args.batchsize == 0
 
-    # Set up the stats
-    stats_filename = os.path.join(experiment_dir, "stats.json")
+    # Set up the stats (model-specific)
+    stats_filename = os.path.join(model_experiment_dir, "stats.json")
     if os.path.exists(stats_filename):
         stats = json.load(open(stats_filename))
     else:
@@ -63,24 +78,26 @@ async def main(args):
     for epoch in range(args.epochs):
         # Init
         print("=" * 30 + f"\nEpoch {epoch}\n" + "=" * 30)
-        cur_epoch_dir = os.path.join(experiment_dir, f"epoch_{epoch}")
+        # Shared epoch directory for all models
+        cur_epoch_dir = os.path.join(base_experiment_dir, f"epoch_{epoch}")
         os.makedirs(cur_epoch_dir, exist_ok=True)
 
-        # Check if shuffled data already exists for this epoch
+        # Check if shuffled data already exists for this epoch (shared across models)
         shuffled_filename = os.path.join(cur_epoch_dir, "shuffled_data.jsonl")
         if os.path.exists(shuffled_filename):
             shuffled_data = []
             with open(shuffled_filename) as f:
                 for line in f:
                     shuffled_data.append(json.loads(line))
-            print(f"Loaded {len(shuffled_data)} records from shuffled data")
+            print(f"Loaded {len(shuffled_data)} records from shuffled data (shared epoch data)")
         else:
-            print(f"Shuffling data ...")
+            print(f"Shuffling data and creating shared epoch data...")
             shuffled_data = copy.deepcopy(train_data)
             random.shuffle(shuffled_data)
             with open(shuffled_filename, "w") as f:
                 for each in shuffled_data:
                     f.write(json.dumps(each) + "\n")
+            print(f"Created shared epoch data at: {shuffled_filename}")
 
         # for each batch
         num_batches = len(shuffled_data) // args.batchsize
@@ -93,7 +110,8 @@ async def main(args):
 
             # Init
             print(f"Step {step} (Epoch {epoch}, Batch {batch_idx})")
-            cur_step_dir = os.path.join(experiment_dir, f"step_{step}")
+            # Model-specific step directory
+            cur_step_dir = os.path.join(model_experiment_dir, f"step_{step}")
             os.makedirs(cur_step_dir, exist_ok=True)
             
             # Get current batch data
@@ -105,7 +123,7 @@ async def main(args):
             
             # Retrieve experiences for this batch (except first step)
             if step > 0:
-                experience_filename = os.path.join("data", args.domain, "train", args.experiment_name, f"step_{step}/experiences.json")
+                experience_filename = os.path.join(model_experiment_dir, f"step_{step}/experiences.json")
                 experiences = json.load(open(experience_filename))
             else:
                 experiences = {}
@@ -139,7 +157,7 @@ async def main(args):
             stats[f"step_{step}"]["rollout"] = rollout_stats
 
             # Generate critiques and update experiences
-            next_step_dir = os.path.join(experiment_dir, f"step_{step+1}")
+            next_step_dir = os.path.join(model_experiment_dir, f"step_{step+1}")
             os.makedirs(next_step_dir, exist_ok=True)
             next_experience_filename = os.path.join(next_step_dir, "experiences.json")
             if os.path.exists(next_experience_filename):
@@ -165,9 +183,10 @@ async def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training-free GRPO")
     parser.add_argument("--mode", type=str, default="agent", required=True, choices=["prompt", "agent"], help="Mode of inference")
+    parser.add_argument("--model", type=str, default=None, choices=get_supported_models(), help=f"Model to use (choices: {', '.join(get_supported_models())}). If not specified, uses .env configuration")
     parser.add_argument("--domain", type=str, required=True, choices=["math", "web"], help="domain of the tasks (math/web)")
     parser.add_argument("--experiment_name", type=str, required=True, help="name of experiment run")
-    parser.add_argument("--dataset", type=str, required="True", help="Name of dataset")
+    parser.add_argument("--dataset", type=str, required=True, help="Name of dataset")
     parser.add_argument("--dataset_truncate", type=int, default=None, help="Truncate dataset to first N samples")
     parser.add_argument("--given_ground_truth", type=str, default="True", help="Whether use ground truth answers")
     parser.add_argument("--epochs", type=int, default=2, help="number of training epochs")
