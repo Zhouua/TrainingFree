@@ -78,6 +78,65 @@
 - ✅ 默认值设为 16384，适配大多数主流模型
 - ✅ 支持针对不同任务动态调整 token 限制
 
+### 问题 5: 评测数据管理混乱
+
+**问题描述**：
+- 原始代码中每个模型的评测结果存储在独立文件中
+- 重复评测会覆盖之前的结果，丢失历史数据
+- 难以对比不同模型在相同数据集上的表现
+- 无法追溯评测的配置和时间信息
+
+**改进方案**：
+- ✅ **共享 rollout 机制**：所有模型使用相同的 `rollouts.jsonl`，确保公平对比
+- ✅ **追加式统计记录**：每次评测追加到统计文件而非覆盖，保留完整历史
+- ✅ **时间戳和配置追踪**：记录评测时间、使用的经验文件、Pass@K 参数等
+- ✅ **标准化路径结构**：`data/{domain}/eval/{dataset}/rollouts.jsonl` 和 `{model_name}_stats.json`
+- ✅ **性能趋势分析**：可通过历史记录观察模型在不同训练阶段的性能变化
+
+**新的评测目录结构**：
+```
+data/{domain}/eval/{dataset}/
+├── rollouts.jsonl              # 所有模型共享的 rollout 数据
+├── deepseek-chat_stats.json    # DeepSeek 的统计历史（数组格式）
+├── qwen3-8b_stats.json         # Qwen 的统计历史
+└── gemini-2.0-flash_stats.json # Gemini 的统计历史
+```
+
+**统计文件格式示例**：
+```json
+[
+  {
+    "timestamp": "2025-10-22 20:07:15",
+    "experience_file": "none",
+    "pass_k": 1,
+    "avg_reward": 0.45,
+    "Pass@1": 0.45,
+    "avg_tool_call": 7.2
+  },
+  {
+    "timestamp": "2025-10-22 23:29:18",
+    "experience_file": "data/math/train/DAPO100/deepseek-chat/step_3/experiences.json",
+    "pass_k": 32,
+    "avg_reward": 0.583,
+    "Pass@32": 1.0,
+    "avg_tool_call": 8.9
+  }
+]
+```
+
+### 问题 6: 断点续传数据不兼容
+
+**问题描述**：
+- 修改 `grpo_n` 参数后无法继续训练
+- rollout 文件长度不匹配导致 `AssertionError`
+- 必须删除已有数据重新开始，浪费计算资源
+
+**改进方案**：
+- ✅ **智能数据扩展**：当新数据更多时自动扩展 rollout 列表
+- ✅ **安全截断机制**：当新数据更少时自动截断
+- ✅ **部分验证**：仅对重叠部分进行问题一致性校验
+- ✅ **友好错误提示**：明确指出数据不匹配的原因和解决方案
+
 ## 🚀 快速开始
 
 ### 1. 环境设置
@@ -291,24 +350,79 @@ python train.py \
 - `--pass_k`: Pass@k 指标
 - `--task_timeout`: 超时时间
 
-**示例 1：评估数学推理任务**
+**示例 1：评估数学推理任务（使用训练的经验）**
+
+```bash
+cd training_free_grpo
+
+python main.py \
+    --mode agent \
+    --model deepseek \
+    --domain math \
+    --dataset AIME25 \
+    --experience_file data/math/train/DAPO100/deepseek-chat/step_3/experiences.json \
+    --rollout_concurrency 128 \
+    --pass_k 32
+```
+
+或使用快捷脚本：
+
+```bash
+bash eval.sh
+```
+
+**示例 2：基线评估（无经验）**
 
 ```bash
 python main.py \
     --mode agent \
     --model qwen \
     --domain math \
-    --experiment_name AIME24_test \
-    --dataset AIME24 \
-    --experience_file data/math/train/DAPO100/qwen3-8b/step_3/experiences.json \
+    --dataset AIME25 \
     --rollout_concurrency 5 \
-    --rollout_max_tokens 16384 \
     --pass_k 32
 ```
 
-**注意**：经验文件路径现在包含模型名称，如 `data/math/train/DAPO100/{model_name}/step_X/experiences.json`
+**示例 3：对比不同训练阶段**
 
-**示例 2：评估 Web 搜索任务**
+```bash
+# 评测 step 1
+python main.py --model deepseek --dataset AIME25 \
+  --experience_file data/math/train/DAPO100/deepseek-chat/step_1/experiences.json \
+  --pass_k 32
+
+# 评测 step 2
+python main.py --model deepseek --dataset AIME25 \
+  --experience_file data/math/train/DAPO100/deepseek-chat/step_2/experiences.json \
+  --pass_k 32
+
+# 评测 step 3
+python main.py --model deepseek --dataset AIME25 \
+  --experience_file data/math/train/DAPO100/deepseek-chat/step_3/experiences.json \
+  --pass_k 32
+```
+
+所有评测结果会追加到 `data/math/eval/AIME25/deepseek-chat_stats.json`，方便查看性能提升趋势。
+
+**示例 4：多模型对比评测**
+
+```bash
+# 评测 DeepSeek
+python main.py --model deepseek --dataset AIME25 \
+  --experience_file data/math/train/DAPO100/deepseek-chat/step_3/experiences.json
+
+# 评测 Qwen（使用相同的 rollout 数据）
+python main.py --model qwen --dataset AIME25 \
+  --experience_file data/math/train/DAPO100/qwen3-8b/step_3/experiences.json
+
+# 评测 Gemini
+python main.py --model gemini --dataset AIME25 \
+  --experience_file data/math/train/DAPO100/gemini-2.0-flash/step_3/experiences.json
+```
+
+所有模型共享 `data/math/eval/AIME25/rollouts.jsonl`，确保公平对比。
+
+**示例 5：评估 Web 搜索任务****
 
 ```bash
 python main.py \
@@ -324,13 +438,26 @@ python main.py \
 
 ## 💡 使用建议
 
+### 训练建议
+
 1. **并发控制**：建议从低并发（5-10）开始测试，避免触发 API 速率限制
 2. **模型切换**：使用 `--model` 参数快速切换模型，无需修改 `.env` 文件
 3. **断点续传**：训练支持自动断点续传，中断后可直接重新运行相同命令
 4. **数据一致性**：共享的 epoch 数据确保不同模型使用相同的训练序列
 5. **Token 优化**：根据模型能力调整 `--rollout_max_tokens` 参数
+6. **GRPO 参数调整**：支持修改 `grpo_n` 后继续训练，系统会自动调整数据结构
+
+### 评测建议
+
+1. **共享 Rollout**：多个模型评测同一数据集时会自动共享 rollout，节省成本
+2. **历史追踪**：评测结果会追加保存，不会覆盖历史记录
+3. **基线对比**：先运行无经验的基线评测，再运行有经验的评测，对比提升效果
+4. **阶段对比**：评测不同训练阶段（step_1, step_2, step_3）观察性能变化
+5. **统计查看**：查看 `{model_name}_stats.json` 了解完整评测历史
 
 ## 📂 目录结构（改进后）
+
+### 训练数据结构
 
 ```
 data/{domain}/train/{experiment_name}/
@@ -351,10 +478,62 @@ data/{domain}/train/{experiment_name}/
     └── ...
 ```
 
+### 评测数据结构
+
+```
+data/{domain}/eval/{dataset}/
+├── rollouts.jsonl              # 所有模型共享的 rollout 数据
+├── deepseek-chat_stats.json    # DeepSeek 的评测历史（数组格式）
+├── qwen3-8b_stats.json         # Qwen 的评测历史
+└── gemini-2.0-flash_stats.json # Gemini 的评测历史
+```
+
+**统计文件示例** (`{model_name}_stats.json`)：
+```json
+[
+  {
+    "timestamp": "2025-10-22 20:07:15",
+    "experience_file": "none",
+    "pass_k": 1,
+    "avg_reward": 0.45,
+    "Pass@1": 0.45
+  },
+  {
+    "timestamp": "2025-10-22 23:29:18",
+    "experience_file": "data/math/train/DAPO100/deepseek-chat/step_3/experiences.json",
+    "pass_k": 32,
+    "avg_reward": 0.583,
+    "Pass@32": 1.0
+  }
+]
+```
+
 ## 🔗 参考资源
 
 - **原始仓库**: [TencentCloudADP/youtu-agent](https://github.com/TencentCloudADP/youtu-agent/tree/training_free_GRPO)
 - **论文**: [Training-Free Group Relative Policy Optimization (arXiv:2510.08191)](https://arxiv.org/abs/2510.08191)
+- **详细文档**: [training_free_grpo/README.md](training_free_grpo/README.md)
+
+## 📋 更新日志
+
+### v2.0.0 (2025-10-22)
+
+**新增功能**:
+- ✅ 多模型支持 (`--model` 参数)
+- ✅ 模型配置管理模块 (`model_config.py`)
+- ✅ 共享 rollout 评测机制
+- ✅ 追加式统计记录（带时间戳）
+- ✅ 断点续传支持 `grpo_n` 参数动态调整
+- ✅ 详细的 `training_free_grpo/README.md` 文档
+
+**优化改进**:
+- 🔧 评测路径从 `experiment_name` 改为 `dataset`
+- 🔧 统计文件从单次结果改为历史记录数组
+- 🔧 更友好的错误提示和参数说明
+
+**Bug 修复**:
+- 🐛 修复断点续传时 rollout 数据长度不匹配的问题
+- 🐛 修复多次评测时统计结果被覆盖的问题
 
 
 

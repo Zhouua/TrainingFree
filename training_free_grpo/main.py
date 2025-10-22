@@ -1,10 +1,12 @@
-import os
-import json
 import argparse
 import asyncio
 import copy
+import json
+import os
+import random
 import time
 import traceback
+from datetime import datetime
 
 from tqdm import tqdm
 from collections import defaultdict
@@ -49,11 +51,26 @@ async def rollout_dataset(
     if len(rollouts) > 0:
         for each in rollouts:
             assert "runid" in each
-        data_problems = [each["problem"] for each in data]
+        # Check if we need to extend rollouts (e.g., when grpo_n changed)
+        if len(data) > len(rollouts):
+            print(f"Extending rollouts from {len(rollouts)} to {len(data)} samples...")
+            # Add new samples with runid starting from len(rollouts)
+            for i in range(len(rollouts), len(data)):
+                rollouts.append({"runid": i, **data[i]})
+        elif len(data) < len(rollouts):
+            # Truncate rollouts if data is smaller (shouldn't happen in normal cases)
+            print(f"Warning: Truncating rollouts from {len(rollouts)} to {len(data)} samples")
+            rollouts = rollouts[:len(data)]
+        
+        # Verify that problems match for existing rollouts
+        data_problems = [each["problem"] for each in data[:len(rollouts)]]
         rollouts_problems = [each["problem"] for each in rollouts]
-        assert data_problems == rollouts_problems, (
-            f"The problems in data should be the same as existing rollouts {rollout_filename}"
-        )
+        if data_problems != rollouts_problems:
+            raise AssertionError(
+                f"The problems in data don't match existing rollouts {rollout_filename}. "
+                f"This might happen if you changed the dataset or grpo_n parameter. "
+                f"Consider deleting the rollout file to start fresh."
+            )
     else:
         for sample in data:
             assert "problem" in sample and "groundtruth" in sample
@@ -196,6 +213,15 @@ async def rollout_dataset(
 
 
 async def main(args):
+    # Set up model configuration if specified
+    if args.model:
+        from training_free_grpo.model_config import setup_model_env
+        setup_model_env(args.model)
+    
+    # Get current model name from environment
+    current_model_name = os.getenv("UTU_LLM_MODEL", "unknown")
+    print(f"Using model: {current_model_name}")
+    
     # Set up domain-specific variables
     if args.domain == "math":
         from training_free_grpo.math.dataset import load_data
@@ -248,13 +274,15 @@ async def main(args):
     formatted_test_data = formatted_test_data * args.pass_k
     print(f"Duplicated to {len(formatted_test_data)} records for Pass@{args.pass_k} evaluation")
 
-    # Load existing rollouts
-    os.makedirs(f"data/{args.domain}/eval", exist_ok=True)
-    rollout_filename = f"data/{args.domain}/eval/{args.experiment_name}.jsonl"
+    # Load existing rollouts (shared across all models)
+    eval_dir = f"data/{args.domain}/eval/{args.dataset}"
+    os.makedirs(eval_dir, exist_ok=True)
+    rollout_filename = f"{eval_dir}/rollouts.jsonl"
     rollouts = load_rollouts(rollout_filename)
+    print(f"Shared rollout file: {rollout_filename}")
 
     # Rollout the dataset
-    await rollout_dataset(
+    rollouts, stats = await rollout_dataset(
         worker_agent=worker_agent,
         data=formatted_test_data,
         rollouts=rollouts,
@@ -264,16 +292,54 @@ async def main(args):
         task_timeout=args.task_timeout,
         max_tokens=args.rollout_max_tokens,
     )
+    
+    # Save model-specific stats with timestamp
+    stats_filename = f"{eval_dir}/{current_model_name}_stats.json"
+    
+    # Load existing stats if file exists
+    if os.path.exists(stats_filename):
+        with open(stats_filename, "r") as f:
+            all_stats = json.load(f)
+        if not isinstance(all_stats, list):
+            # Convert old format (single dict) to new format (list of dicts)
+            all_stats = [all_stats]
+    else:
+        all_stats = []
+    
+    # Add timestamp and experience_file info to current stats
+    current_stats = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "experience_file": args.experience_file if args.experience_file else "none",
+        "pass_k": args.pass_k,
+        **stats
+    }
+    
+    # Append to stats list
+    all_stats.append(current_stats)
+    
+    # Save updated stats
+    with open(stats_filename, "w") as f:
+        json.dump(all_stats, f, indent=2, ensure_ascii=False)
+    
+    print(f"Model-specific stats saved to: {stats_filename}")
+    print(f"Total evaluation runs: {len(all_stats)}")
+    print("\nLatest Statistics:")
+    for k, v in current_stats.items():
+        if k not in ["timestamp", "experience_file", "pass_k"]:
+            print(f"  {k}: {v}")
 
 
 if __name__ == "__main__":
+    from training_free_grpo.model_config import get_supported_models
+    
     parser = argparse.ArgumentParser(description="Training-Free GRPO Evaluation")
     parser.add_argument("--mode", type=str, default="agent", required=True, choices=["prompt", "agent"], help="Mode of inference")
+    parser.add_argument("--model", type=str, default=None, choices=get_supported_models(), help=f"Model to use (choices: {', '.join(get_supported_models())}). If not specified, uses .env configuration")
     parser.add_argument("--domain", type=str, required=True, choices=["math", "web"], help="The domain of the experiment")
-    parser.add_argument("--experiment_name", type=str, required=True, help="Name of the experiment run")
-    parser.add_argument("--dataset", type=str, required=True, help="Name of dataset")
+    parser.add_argument("--experiment_name", type=str, required=False, help="(Deprecated) Name of the experiment run. Use --dataset instead")
+    parser.add_argument("--dataset", type=str, required=True, help="Name of dataset (e.g., AIME25, MATH500)")
     parser.add_argument("--dataset_truncate", type=int, default=None, help="Truncate dataset to first N samples")
-    parser.add_argument("--experience_file", type=str, default=None)
+    parser.add_argument("--experience_file", type=str, default=None, help="Path to experience file (e.g., data/math/train/DAPO100/deepseek-chat/step_3/experiences.json)")
     parser.add_argument("--rollout_concurrency", type=int, default=5, help="Concurrency level for rollouts")
     parser.add_argument("--rollout_max_tokens", type=int, default=16384, help="Max tokens for each rollout")
     parser.add_argument("--pass_k", type=int, default=1, help="Pass@k metric")
