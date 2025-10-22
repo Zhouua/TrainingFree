@@ -1,0 +1,56 @@
+DEEP_EXTRACTION: |
+  Please summarize the following webpage content in relation to the question: "{question}"
+
+  <webpage_info>
+  Search Query: {query}
+  Title: {title}
+  URL: {url}
+  Content: {content}
+  </webpage_info>
+
+  <question>
+  Question: {question}
+  </question>
+
+  Extract and summarize only the information that is relevant to answering the question. If the webpage contains no relevant information, state that clearly. Keep the summary concise but comprehensive.
+
+DEEP_FINAL: |
+  Based on the following web search results from multiple search queries, please answer the question: "{question}"
+
+  <search_queries>
+  Queries: {queries}
+  </search_queries>
+
+  {formatted_content}
+
+  Please provide a comprehensive answer to the question based on the information found across all the web content above. Synthesize information from different sources and queries to provide a complete response. If the information is not sufficient to answer the question, please indicate what additional information might be needed.
+
+  <question>
+  Question: {question}
+  </question>
+
+PARALLEL_EXTRACTION: |
+  Based on the following search results for the query, please provide a concise answer related to the question:
+
+  <search_results>
+  {query_content}
+  </search_results>
+
+  <query>
+  {query}
+  </query>
+
+  <question>
+  {question}
+  </question>
+
+  Please extract the most relevant information from these search results that helps answer the question. Keep your response focused and concise.
+
+SP_SUMMARY: |
+  Your task is to extract and summarize the key information from a webpage that is relevant to answering a specific question. Focus on factual information and maintain objectivity.
+
+SP_ANALYSIS: |
+  Your task is to provide comprehensive answers based on search engine results from multiple queries. You will receive webpage content from multiple search queries and a specific question, and your goal is to extract and synthesize the most essential information to answer the question.
+
+SP_PARALLEL: |
+  Your task is to provide comprehensive answers based on search engine snippets from multiple queries. You will receive multiple search queries and their corresponding search results, and your goal is to extract and summarize the most essential information to answer the common question.

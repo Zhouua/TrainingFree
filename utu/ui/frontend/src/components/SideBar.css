@@ -1,0 +1,738 @@
+/* Sidebar styles */
+.sidebar {
+  width: var(--side-bar-width, 250px);
+  height: 100vh;
+  background-color: var(--color-header-bg, #f5f5f5);
+  border-right: 1px solid var(--color-border, #e0e0e0);
+  padding: 70px 16px 16px; /* Added top padding for hamburger button */
+  box-sizing: border-box;
+  overflow: visible;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 999; /* Lower z-index than hamburger button */
+  transition: transform 0.3s ease-in-out, background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-text, #213547);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: 2px 0 5px var(--color-shadow, rgba(0, 0, 0, 0.1));
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar.sidebar-open + .sidebar-overlay {
+    display: block;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+  .sidebar {
+    transform: translateX(0) !important;
+  }
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  overflow-y: auto;
+  height: 100%;
+  /* Hide scrollbar (Firefox & IE/Edge legacy) while keeping scroll */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.sidebar-button {
+  width: 100%;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  background-color: var(--color-button-bg, #f9f9f9);
+  border: 1px solid var(--color-border, #e0e0e0);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  font-size: 0.95em;
+  color: var(--color-text, #213547);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-button:hover {
+  background-color: var(--color-row-hover, #f1f1f1);
+  border-color: var(--color-button-hover, #747bff);
+  color: var(--color-accent, #4a6cf7);
+}
+
+.sidebar-button:active {
+  transform: translateY(1px);
+}
+
+/* Special style for primary action buttons like New Chat */
+.sidebar-button.primary {
+  background-color: var(--color-accent, #4a6cf7);
+  color: white;
+  border: none;
+  justify-content: center;
+  font-weight: 500;
+  margin: 0 0 16px 0;
+  padding: 12px 16px;
+  box-shadow: 0 2px 4px var(--color-shadow, rgba(0, 0, 0, 0.05));
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.sidebar-button.primary:hover {
+  background-color: var(--agent-status-color, #3a5bd9);
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-divider {
+  border-top: 1px solid #e0e0e0;
+  margin: 16px 0;
+}
+
+.sidebar-button-text {
+  border: none;
+  background-color: transparent;
+  justify-content: flex-start;
+  color: var(--color-text, #213547);
+}
+
+.sidebar-button-text:hover {
+  background-color: var(--color-row-hover, #f1f1f1);
+  color: var(--color-accent, #4a6cf7);
+}
+
+/* Search Box Styling */
+.search-box-container {
+  padding: 0 4px;
+  margin: 0 0 8px 0;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--color-input-bg, #fff);
+  border: 1px solid var(--color-border, #e0e0e0);
+  border-radius: 4px;
+  padding: 4px 8px;
+  height: 28px;
+  transition: all 0.2s ease;
+}
+
+.search-box:focus-within {
+  border-color: var(--color-accent, #4a6cf7);
+  box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.2);
+}
+
+.search-icon {
+  color: var(--color-subtle-text, #9e9e9e);
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.85em;
+  color: var(--color-text, #213547);
+  padding: 0;
+  height: 20px;
+  line-height: 20px;
+}
+
+.search-input::placeholder {
+  color: var(--color-subtle-text, #9e9e9e);
+}
+
+.clear-search {
+  background: none;
+  border: none;
+  color: var(--color-subtle-text, #9e9e9e);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.clear-search:hover {
+  color: var(--color-text, #213547);
+  background-color: var(--color-row-hover, #f1f1f1);
+}
+
+.clear-search i {
+  font-size: 12px;
+}
+
+/* Section Styling */
+.sidebar-section {
+  position: relative;
+}
+
+.sidebar-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 0 8px;
+}
+
+/* Left group: collapse button + title tightly together */
+.sidebar-section-left {
+  display: flex;
+  align-items: center;
+  gap: 0; /* no gap between button and title */
+}
+
+/* Make the collapse button sit flush with the title */
+.collapse-button {
+  padding: 0; /* remove internal padding to eliminate visual gap */
+  margin: 0;  /* ensure no margin between button and title */
+}
+
+/* Keep icon size consistent when padding is removed */
+.collapse-button i {
+  font-size: 0.9em;
+}
+
+/* Make the title look clickable when used to toggle collapse */
+.sidebar-section-title.clickable {
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sidebar-section-title.clickable:focus {
+  outline: none;
+}
+
+.sidebar-section-title.clickable:focus-visible {
+  outline: 2px solid var(--color-accent, #4a6cf7);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Collapse/Expand control row */
+.collapse-row {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  margin: 4px 0 8px 0;
+}
+
+.collapse-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 6px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-subtle-text, #6c757d);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.85em;
+}
+
+.collapse-action:hover {
+  background-color: var(--color-row-hover, #f1f1f1);
+  color: var(--color-accent, #4a6cf7);
+}
+
+.collapse-action i {
+  font-size: 0.9em;
+}
+
+.sidebar-section-title {
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--color-subtle-text, #6c757d);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.refresh-button {
+  background: none;
+  border: none;
+  color: var(--color-subtle-text, #6c757d);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  color: var(--color-accent, #4a6cf7);
+  background-color: var(--color-row-hover, #f1f1f1);
+}
+
+.refresh-button i {
+  font-size: 0.9em;
+  transition: transform 0.3s ease;
+}
+
+.refresh-button.refreshing i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Config list specific styles */
+.config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 300px;
+  padding-right: 4px;
+  margin: 0 -4px;
+}
+
+/* Custom scrollbar for config list */
+.config-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.config-list::-webkit-scrollbar-track {
+  background: var(--color-input-bg, #f5f5f5);
+  border-radius: 3px;
+}
+
+.config-list::-webkit-scrollbar-thumb {
+  background-color: var(--color-border, #e0e0e0);
+  border-radius: 3px;
+}
+
+.config-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-subtle-text, #bdbdbd);
+}
+
+.config-list-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.config-icon-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.config-icon {
+  font-size: 12px;
+  color: var(--color-subtle-text, #9e9e9e);
+}
+
+.config-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-item {
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85em;
+  color: var(--color-text, #213547);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.config-item:hover {
+  background-color: var(--color-row-hover, #f1f1f1);
+}
+
+.config-item.active {
+  background-color: var(--color-accent-light, #e8edff);
+  color: var(--color-accent, #4a6cf7);
+  font-weight: 500;
+}
+
+/* Configs Section */
+.config-toc-item {
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85em;
+  color: var(--color-text, #213547);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  font-size: 0.9em;
+}
+
+.config-toc-item:hover {
+  background-color: var(--color-row-hover, #f1f1f1);
+}
+
+.config-toc-item.active {
+  background-color: var(--color-accent-10, rgba(74, 108, 247, 0.1));
+  color: var(--color-accent, #4a6cf7);
+  font-weight: 500;
+}
+
+.config-toc-item.add-config {
+  color: var(--color-accent, #4a6cf7);
+  font-weight: 500;
+}
+
+.config-toc-item.add-config i {
+  color: var(--color-accent, #4a6cf7);
+  transition: color 0.3s ease;
+}
+.sidebar-configs-dropdown {
+  background: var(--color-detail-bg, #fff);
+  transition: background-color 0.3s ease;
+  border-radius: 8px;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border, #e0e0e0);
+}
+
+.sidebar-config-option {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: var(--color-text, #213547);
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-config-option:hover {
+  background-color: var(--color-row-hover, #f1f1f1);
+}
+
+.sidebar-config-option.active {
+  background-color: var(--color-accent-10, rgba(74, 108, 247, 0.1));
+  color: var(--color-accent, #4a6cf7);
+  font-weight: 500;
+}
+
+/* Tooltip styles */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  height: 100%;
+}
+
+.tooltip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translateY(-50%);
+  background-color: var(--color-bg-overlay, #2d3748);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  pointer-events: none;
+  animation: fadeIn 0.15s ease-out;
+}
+
+/* Current Config Section */
+.current-config-display {
+  background-color: var(--color-accent-10, rgba(74, 108, 247, 0.1));
+  border-radius: 8px;
+  padding: 12px;
+  margin: 16px 8px 16px 8px;
+  border: 1px solid var(--color-accent-20, rgba(74, 108, 247, 0.2));
+}
+
+.current-config-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--color-accent, #4a6cf7);
+  font-weight: 500;
+}
+
+.current-config-header i {
+  margin-right: 8px;
+  color: var(--color-accent, #4a6cf7);
+}
+
+.current-config-title {
+  font-weight: 500;
+  color: var(--color-accent, #4a6cf7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.current-config-path {
+  font-size: 0.8em;
+  color: var(--color-subtle-text, #6c757d);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 12px;
+}
+
+/* Sub-agents section */
+.sub-agents-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-border, #e0e0e0);
+}
+
+.sub-agents-title {
+  font-size: 0.7em;
+  color: var(--color-subtle-text, #6c757d);
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+.sub-agents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+  font-size: 0.8em;
+  color: var(--color-text, #555);
+}
+
+.sub-agent-item {
+  padding: 2px 0;
+  line-height: 1.3;
+}
+
+.sub-agent-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  padding-left: 4px;
+}
+
+.current-config-display {
+  margin-bottom: 8px;
+}
+
+/* Add New Config button */
+.add-config-button {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  margin: 0 8px 8px 8px !important;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: var(--color-accent, #4a6cf7) !important;
+  font-weight: 500;
+  background-color: transparent;
+  transition: all 0.2s ease;
+  width: calc(100% - 16px);
+  box-sizing: border-box;
+}
+
+.add-config-button:hover {
+  background-color: var(--color-accent-10, rgba(74, 108, 247, 0.1));
+  color: var(--color-accent-dark, #3a5bd9) !important;
+}
+
+.add-config-button i {
+  font-size: 0.8em;
+  margin-right: 6px;
+}
+
+/* Config List Item */
+.agent-toc-item {
+  padding: 4px 8px;
+  margin: 1px 6px;
+  border-radius: 4px;
+  min-height: 24px;
+  line-height: 1.2;
+  font-size: 0.9em;
+}
+
+.config-list-item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 20px;
+}
+
+.config-icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.config-icon {
+  font-size: 0.75em;
+  color: inherit;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.config-name {
+  font-size: 0.85em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  padding: 1px 0;
+}
+
+.sidebar-config-option.add-config {
+  color: var(--color-accent, #4a6cf7);
+  font-weight: 500;
+  border-top: 1px solid var(--color-border, #e0e0e0);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.sidebar-configs-loading {
+  padding: 12px 16px;
+  color: var(--color-subtle-text, #6c757d);
+  font-size: 0.9em;
+  text-align: center;
+}
+
+/* Scrollbar for configs dropdown */
+.sidebar-configs-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-configs-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-configs-dropdown::-webkit-scrollbar-thumb {
+  background-color: var(--color-border, #e0e0e0);
+  border-radius: 3px;
+}
+
+.sidebar-configs-dropdown::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-subtle-text, #6c757d);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-4px, -50%); }
+  to { opacity: 1; transform: translate(0, -50%); }
+}
+
+/* Hide scrollbar (WebKit) while keeping scroll */
+.sidebar-content::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+/* Also ensure track/thumb are invisible if rendered */
+.sidebar-content::-webkit-scrollbar-track { background: transparent; }
+.sidebar-content::-webkit-scrollbar-thumb { background: transparent; }
+
+/* Hamburger button styles */
+.hamburger-button {
+  display: flex;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  color: var(--color-text, #213547);
+  transition: color 0.3s ease;
+  z-index: 1100; /* Higher z-index than sidebar */
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  font-size: 1.2em;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.hamburger-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.hamburger-button i {
+  transition: transform 0.3s ease;
+}
+
+.hamburger-button:hover i {
+  transform: scale(1.1);
+}
+
+/* Animation for the close icon */
+.hamburger-button[aria-expanded="true"] i.fa-times {
+  transform: rotate(180deg);
+}
+
+/* Show hamburger on all screen sizes */
+.hamburger-button {
+  display: flex;
+}
+
+/* Adjust sidebar position when open on mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    padding-top: 70px;
+  }
+}

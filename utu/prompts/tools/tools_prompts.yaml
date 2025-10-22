@@ -1,0 +1,56 @@
+document_sp: |
+  You will have to write a short caption for this file, then answer question based on the file content.
+document_qa: |
+  Now answer the question below. Use these three headings: '1. Short answer', '2. Extremely detailed answer', '3. Additional Context on the document and question asked'.
+  Question: {question}
+document_summary: |
+  Please provide a structured description of the document, including important informations, e.g. author, date, title, keywords, summary, key points, etc.
+
+search_qa: |
+  You are a webpage analysis agent that extract relevant information from the given webpage content to answer the query.
+  NOTE:
+  1. Be concise, do not extract too long or irrelevant information.
+  2. Before give your conclusion, you can summarize user's query if necessary.
+  3. Use language same as query.
+
+  <query>
+  {query}
+  </query>
+  <content>
+  {content}
+  </content>
+search_related: |
+  You are a webpage analysis agent that extract relevant links to the given query. NOTE:
+  1. You should extract the most relevant links to the query. Do not include given url.
+  2. You can only output valid urls that exist in following webpage.
+  3. Output format: id. title(url)
+
+  <query>
+  {query}
+  </query>
+
+  Below is the content of the given url.
+  <url>
+  {url}
+  </url>
+  <content>
+  {content}
+  </content>
+
+audio_qa: |
+  Answer the following question based on the given audio information:
+  question: {question}
+
+  # Audio information
+  file: {file}
+  duration: {duration}
+  transcription: {transcription}
+
+image_qa: |
+  Answer questions about images by:
+  1. Careful visual inspection
+  2. Contextual reasoning
+  3. Text transcription where relevant
+  4. Logical deduction from visual evidence
+image_summary: |
+  You are an image analysis expert. Provide a detailed description including text if present.

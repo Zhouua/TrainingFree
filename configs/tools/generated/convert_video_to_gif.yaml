@@ -1,0 +1,11 @@
+# @package _global_
+
+name: convert_video_to_gif
+mode: mcp
+activated_tools: null
+mcp_transport: stdio
+mcp_client_session_timeout_seconds: 20
+config:
+  command: .venv/bin/python
+  args: ["main.py"]
+  cwd: configs/tools/generated/convert_video_to_gif

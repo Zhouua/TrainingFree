@@ -1,0 +1,33 @@
+# @package _global_
+defaults:
+  - /model/base@planner_model
+  - /model/base@reporter_model
+  - /agents/simple/search_agent@workers.SearchAgent
+  - /agents/simple/data_analysis_agent@workers.DataAnalysisAgent
+  - /agents/simple/analysis_agent@workers.AnalysisAgent
+  - _self_
+
+
+type: orchestra
+
+planner_config:
+  examples_path: planner_examples_data.json
+
+reporter_model:
+  model_provider:
+    type: ${oc.env:UTU_LLM_TYPE}
+    model: ${oc.env:UTU_LLM_MODEL}
+
+workers_info:
+  - name: SearchAgent
+    desc: information retrieval and data collection.
+    strengths: Web search, information retrieval, research material collection, API data fetching
+    weaknesses: No access to private databases, retrieval only (no content creation/modification)
+  - name: DataAnalysisAgent
+    desc: explore and analyze data, return the analysis
+    strengths: Exploring and analyzing tabular data files (CSV, Excel, etc.), performing automated field extraction, statistical analysis, pattern discovery, and generating data insights
+    weaknesses: Only works with structured tabular data with clear file paths. Cannot perform complex machine learning modeling.
+  - name: AnalysisAgent
+    desc: integrate data analysis insights and external information to generate detailed structured reports
+    strengths: Integrating data analysis insights with external information, generating detailed structured reports
+    weaknesses: Only generate text-format reports.

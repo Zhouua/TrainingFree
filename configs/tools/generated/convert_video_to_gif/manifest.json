@@ -1,0 +1,10 @@
+{
+    "name": "convert_video_to_gif",
+    "command": ".venv/bin/python",
+    "args": ["main.py"],
+    "transport": "stdio",
+    "impl_fn": "runner.py",
+    "impl_class_name": "ConvertVideoToGif",
+    "impl_requirements": ["ffmpeg-python"],
+    "impl_methods": ["convert_video_to_gif"]
+}

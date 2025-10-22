@@ -1,0 +1,155 @@
+# https://github.com/squidfunk/mkdocs-material
+
+site_name: Youtu-Agent
+site_url: https://tencentcloudadp.github.io/youtu-agent/
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Toggle to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Toggle to light mode
+      # primary: deep purple
+      # accent: purple
+  features:
+    # Allows copying code blocks
+    - content.code.copy
+    # Allows selecting code blocks
+    - content.code.select
+    # Shows the current path in the sidebar
+    # - navigation.path
+    # Shows sections in the sidebar
+    - navigation.sections
+    # Shows tabs on top
+    - navigation.tabs
+    # Shows sections expanded by default
+    # - navigation.expand
+    # Enables annotations in code blocks
+    - content.code.annotate
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+
+repo_name: Youtu-Agent
+repo_url: https://github.com/TencentCloudADP/youtu-agent
+
+extra:
+  # Remove material generation message in footer
+  generator: false
+  language: en
+  # https://squidfunk.github.io/mkdocs-material/setup/setting-up-site-analytics
+  analytics:
+    provider: google
+    property: G-1DEBDNWPB5
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: >- 
+            Thanks for your feedback! Help us improve this page by
+            using our <a href="https://doc.weixin.qq.com/smartsheet/form/1_wpkSFfCgAAIzkZ-F0ncReQFci0uBXXig_a04906" target="_blank" rel="noopener">feedback form</a>.
+
+
+plugins: 
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["utu"]
+          selection:
+            docstring_style: google
+          options:
+            # Shows links to other members in signatures
+            signature_crossrefs: true
+            # Orders members by source order, rather than alphabetical
+            members_order: source
+            # Puts the signature on a separate line from the member name
+            separate_signature: true
+            # Shows type annotations in signatures
+            show_signature_annotations: true
+            # Makes the font sizes nicer
+            heading_level: 3
+            # Show inherited members
+            inherited_members: true
+            # show_root_heading: true
+            show_source: true
+
+# https://squidfunk.github.io/mkdocs-material/setup/extensions/python-markdown-extensions
+markdown_extensions:
+  # https://squidfunk.github.io/mkdocs-material/reference/diagrams
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+
+extra_css:
+  - stylesheets/extra.css
+
+watch:
+  - utu
+
+nav:
+  - Intro:
+    - Introduction: index.md
+    - FAQ: faq.md
+  - Quickstart: 
+    - QuickStart (for beginner): quickstart_beginner.md
+    - QuickStart: quickstart.md
+    - Start with Docker: docker.md
+  - Documentation:
+    - Config: config.md
+    - Environment Variables: environment_variables.md
+    - Agents: agents.md
+    - Agent Environments: env.md
+    - Tools: tools.md
+    - Evaluation: eval.md
+    - WebUI: frontend.md
+    - Automatic Generation: auto_generation.md
+  - Examples: 
+    - Examples: examples.md
+    - Examples Output:
+      - Deep Research: examples_output/deep_research.md
+      - Wide Research: examples_output/wide_research.md
+      # - Data Analysis: examples_output/data_analysis.md
+  - API Reference:
+    - Agents:
+      - ref/agents/simple_agent.md
+      - ref/agents/orchestra_agent.md
+    - Tools:
+      - ref/tool/base_toolkit.md
+      - ref/tool/search_toolkit.md
+      - ref/tool/document_toolkit.md
+      - ref/tool/image_toolkit.md
+      - ref/tool/video_toolkit.md
+      - ref/tool/codesnip_toolkit.md
+      - ref/tool/bash_toolkit.md
+      - ref/tool/python_executor_toolkit.md
+    - Environments:
+      - ref/env/base_env.md
+      - ref/env/browser_env.md
+    - Evaluation:
+      - ref/eval/data.md
+      - ref/eval/processor.md
+      - ref/eval/benchmarks.md
+    - Utils:
+      - ref/utils/openai_utils.md
+      - ref/utils/agents_utils.md
+    - Config:
+      - ref/config/base_config.md
+      - ref/config/loader.md
+      - ref/config/model_config.md
+      - ref/config/agent_config.md
+      - ref/config/eval_config.md
