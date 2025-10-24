@@ -7,7 +7,7 @@ python train.py \
     --epochs 3 \
     --batchsize 100 \
     --grpo_n 5 \
-    --rollout_concurrency 10 \
+    --rollout_concurrency 128 \
     --rollout_temperature 0.7 \
     --task_timeout 1800 \
     --model qwen

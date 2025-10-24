@@ -44,6 +44,7 @@ async def rollout_dataset(
     max_retries: int = 3,
     temperature: float = 0.3,
     max_tokens: int = 16384,
+    pass_k: int = 1,
 ) -> list[dict]:
     """Rollout the dataset using the worker agent with concurrency control, timeout, error handling, and retries."""
 
@@ -274,12 +275,12 @@ async def main(args):
     formatted_test_data = formatted_test_data * args.pass_k
     print(f"Duplicated to {len(formatted_test_data)} records for Pass@{args.pass_k} evaluation")
 
-    # Load existing rollouts (shared across all models)
+    # Load existing rollouts (model-specific and pass_k-specific)
     eval_dir = f"data/{args.domain}/eval/{args.dataset}"
     os.makedirs(eval_dir, exist_ok=True)
-    rollout_filename = f"{eval_dir}/rollouts.jsonl"
+    rollout_filename = f"{eval_dir}/{current_model_name}_pass{args.pass_k}_rollouts.jsonl"
     rollouts = load_rollouts(rollout_filename)
-    print(f"Shared rollout file: {rollout_filename}")
+    print(f"Model and pass_k specific rollout file: {rollout_filename}")
 
     # Rollout the dataset
     rollouts, stats = await rollout_dataset(
@@ -291,9 +292,10 @@ async def main(args):
         rollout_concurrency=args.rollout_concurrency,
         task_timeout=args.task_timeout,
         max_tokens=args.rollout_max_tokens,
+        pass_k=args.pass_k,
     )
     
-    # Save model-specific stats with timestamp
+    # Save model-specific stats with timestamp (all pass_k in one file)
     stats_filename = f"{eval_dir}/{current_model_name}_stats.json"
     
     # Load existing stats if file exists
