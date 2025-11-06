@@ -9,6 +9,11 @@
 
 关于 Training-Free GRPO 的详细原理、方法和基准测试结果，请参考原始仓库和论文。
 
+## ！！！评测结果
+<img width="3224" height="442" alt="image" src="https://github.com/user-attachments/assets/24d45d14-682f-4f3c-bc7c-88c12c5b28fb" />
+根据issues反馈，说明是按照avg_reward获得结果，但是根据个人评测，论文结果难以信服
+
+
 ## 🎯 遇到的问题与改进
 
 ### 问题 1: 缺少多模型支持
